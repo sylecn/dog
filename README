@@ -33,11 +33,15 @@ smp.el -- simple music player
     SPC  pause playing (for active list)
     q    hide Lists
     c    jump to current list
+    t    switch to list buffer
 
     some keys have different behavior from list buffer
     g    works for list at point
-    l
-    o
+    l    toggle loop for list at point
+    o    when not at heading, toggle random for list at point
+         if you want to toggle that for active list, you can
+	 switch to active list and do that: c o
+	 switch to list buffer and do that: t o q
     j/k  works on boundaries when moving (require different function)
     n    works marked files across lists
     
@@ -47,6 +51,10 @@ smp.el -- simple music player
     RET  play this list
     e    edit the list file (plain editing)
          the user can do insert, ordering, query-replace, anything.
+    o    open list (expand list)
+         if list is already expanded (including active list of course), toggle
+	 random.
+    RET  open list. (no random stuff here)
 
 ** list buffer bindings
    a    add file or dir
@@ -81,13 +89,21 @@ smp.el -- simple music player
    C-c e p    previous file
    C-c e r    repeat this file (play this file again and again, don't go next)
               use C-c e n to go to next file.
+   C-c e l    toggle loop (only valid when playing)
    C-c e e    show list
    C-c e SPC  pause
 
 ** implementations
+*** lists are not expanded when opening Lists buffer
+    lists are stored at ~/.emacs.d/smp/lists/
+    when Lists buffer is be to show, read all names there.
+
+    active list is expanded (copied from active buffer)
+    other lists only expand after o on list name
 *** show command message for every command, such as
-    "loop list: on"
+    "loop: on"
     "random: on"
+    "loop command ignored: not playing"
 *** when add file to list
     auto insert the new file at the end of the existing dir (if any)
     or create a new dir item and put it there
@@ -110,7 +126,22 @@ smp.el -- simple music player
 **** one probable format
      #loop
      #random
+     #/full/path/to/foo.mp3
+     #display name for foo
+     #/full/path/to/bar.wma
+     #display name for bar
      ##        //marks the end of meta info
-     #display name
-     /path/to/music/file
+     ~/music/*.mp3
+     ~/music/foo/bar.mp3
+     ~/music/bar/
      
+*** how to operate mplayer from fifo?
+    for the mute, step, back, volume control
+    see how EMMS did it, or did it ever do it.
+    
+*** how random works
+    don't ever move the display. I remember one GUI music play does shuffle
+    the displaying play list. that's stupid. (sorry for the author who did
+    this)
+    
+    just make a random integer of certain range and play file at that line.
