@@ -1,0 +1,116 @@
+smp.el -- simple music player
+
+* write a music player for emacs 				 :emacs:easy:
+  EMMS is just not nice.
+** the list buffer looks like this
+   icons for dir looks like that in speedbar. (clickable and foldable)
+   <+> ~/musics/foo
+      [music icon] foo1.mp3
+      [music icon] foo2.mp3
+   <+> /fat32/down/musics/bar
+      [music icon] bar1.mp3
+      [music icon] bar2.mp3
+      [music icon] bar3.mp3
+
+** the Lists buffer is for managing mplayer portable play lists
+   it looks like this:
+   current playing list have a different bg face on every file, light green
+   <+> default-list [playing]                                         [loop]
+      <+> ~/musics/foo
+         [music icon] foo1.mp3
+         [music icon] foo2.mp3
+      <+> /fat32/down/musics/bar
+         [music icon] bar1.mp3
+         [music icon] bar2.mp3
+         [music icon] bar3.mp3
+   <+> mylist1                                               [loop] [random]
+      <+> ~/musics/foobar
+         [music icon] foobar1.mp3
+         [music icon] foobar2.mp3
+      <+> /fat32/down/musics/foo
+         [music icon] foo.mp3
+*** Lists buffer bindings
+    SPC  pause playing (for active list)
+    q    hide Lists
+    c    jump to current list
+
+    some keys have different behavior from list buffer
+    g    works for list at point
+    l
+    o
+    j/k  works on boundaries when moving (require different function)
+    n    works marked files across lists
+    
+    when point is at list heading line. (eg. default-list, mylist1)
+    D    delete list from disk (ask for confirmation)
+    p    play this list
+    RET  play this list
+    e    edit the list file (plain editing)
+         the user can do insert, ordering, query-replace, anything.
+
+** list buffer bindings
+   a    add file or dir
+        parameter can be:
+	~/musics/*.mp3
+	~/musics/foo/    add music all files under this dir
+   d    delete file from list
+   D    delete file from disk, ask do you want to delete all ref in play lists
+   r    rename file from list (so, each file can have a show name.)
+   R    rename/mv file (disk)
+   RET  play this file
+   SPC  pause, thus mute
+   q    hide list
+   m    mark
+   u    unmark
+   n    make new list from marked file
+   L    goto Lists buffer
+   s    select file to move; deselect if the file is being selected.
+   j    previous line; if there is a selected file, move that file down
+   k    next line;     if there is a selected file, move that file up
+   l    toggle loop list (remember the choice for every list) on by default
+   o    toggle random (remember the choice for every list) off by default
+        r is already used, so o for randOm.
+   T    toggle show Tags, show filename or mp3 tags (remember the choice for every list)
+   g    refresh list (update dir 'file' and pattern 'file')
+   
+** speedbar bindings   
+   a    add file to current list (current list is currently playing list)
+
+** global bindings
+   C-c e n    next file
+   C-c e p    previous file
+   C-c e r    repeat this file (play this file again and again, don't go next)
+              use C-c e n to go to next file.
+   C-c e e    show list
+   C-c e SPC  pause
+
+** implementations
+*** show command message for every command, such as
+    "loop list: on"
+    "random: on"
+*** when add file to list
+    auto insert the new file at the end of the existing dir (if any)
+    or create a new dir item and put it there
+*** playlist file format
+    patterns and dir are dynamic file in list, they will be expanded each time
+    the list is read from disk. for example,
+    
+    adding ~/musics/*.mp3 to a list will scan all mp3 files in ~/musics each
+    time it gets read from disk or refresh by the user.
+    
+**** playlist must store
+     loop, random info
+     files in order
+     file name in list (alias in list)
+
+**** playlist must be playable by mplayer using -playlist option.
+     check what does mplayer accept.
+     does it accept only dir name in the list?
+
+**** one probable format
+     #loop
+     #random
+     ##        //marks the end of meta info
+     #display name
+     /path/to/music/file
+     
