@@ -123,6 +123,33 @@ smp.el -- simple music player
      check what does mplayer accept.
      does it accept only dir name in the list?
 
+**** a better format
+     the list file only record the files:
+     ~/music/*.mp3
+     ~/music/foo/bar.mp3
+     ~/music/bar/
+
+     the info is recorded using a separate elisp file, just like save-place:
+     smp-lists
+     '((list-name
+        loop-or-not
+	random-or-not) ...)
+
+     should file alias be global or list specific?
+     if global
+     smp-file-aliases
+     ((file-name . display-name)
+      (file-name . display-name) ...)
+
+     if list specific, just put this at end of each element of smp-lists.
+     '((list-name
+        loop-or-not
+	random-or-not ((file-name . display-name)
+	               (file-name . display-name) ...)) ...)
+
+     and this var are written to ~/.emacs.d/smp/smp-lists.el and
+     smp-file-aliases.el respectively. just like what save-place did.
+     
 **** one probable format
      #loop
      #random
