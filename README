@@ -80,6 +80,10 @@ smp.el -- simple music player
         r is already used, so o for randOm.
    T    toggle show Tags, show filename or mp3 tags (remember the choice for every list)
    g    refresh list (update dir 'file' and pattern 'file')
+
+** command bindings
+   comment-line        comment file (file still in list, but will not be played)
+   comment-dwim        toggle comment for current file/current region
    
 ** speedbar bindings   
    a    add file to current list (current list is currently playing list)
@@ -149,6 +153,11 @@ smp.el -- simple music player
 
      and this var are written to ~/.emacs.d/smp/smp-lists.el and
      smp-file-aliases.el respectively. just like what save-place did.
+     
+**** smp will only use elisp objects for lists
+     the user can do import/export play list.
+     there must already be some library that can parse various play list. just
+     use them to tranlate between smp play list and other format.
      
 **** one probable format
      #loop

@@ -1,0 +1,13 @@
+* 
+* major mode in info doc
+  
+** eldoc Lists mode print list name in echo area
+  
+** (put 'funny-mode 'mode-class 'special)
+
+* keymap
+  `(t . BINDING)'
+  print (message "not a command: %?" key) for keys that are not binded.
+
+* find a good name for this library.
+* rename this lib before releasing.
