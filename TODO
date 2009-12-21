@@ -1,6 +1,10 @@
 * implementation considerations
   :note: press C-c l to add new item.
 ** 
+** test how list works on large dir
+   500+ file
+
+   use /usr/lib/*.so to test read/write list.
 ** there is no assoc file with buffer. how can i tell emacs that?
 ** use ezimage to add GUI image icons
    (require 'ezimage)

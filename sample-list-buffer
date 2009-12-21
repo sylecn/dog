@@ -4,16 +4,37 @@
 
     default [playing]                                              [loop]
     
-    <+> ~/musics/foo
-        <f> foo1.mp3
-        <f> foo2.mp3
+    D ~/musics/foo
+        f foo1.mp3
+        f foo2.mp3
 	
-    <+> /fat32/down/musics/bar/*.mp3
-        <f> bar1.mp3
->       <f> bar2.mp3
-        <f> bar3.mp3
+    G /fat32/down/musics/bar/*.mp3
+        f bar1.mp3
+>       f bar2.mp3
+        f bar3.mp3
 
 
-
+faces
+------
 commented file (temporary disabled file) use a different face.
-pattern dir use a different face on the dir line
+pattern dir use two different faces on the dir line, for expanded and folded.
+
+real text (without text prop or overlay) in buffer:
+---------------------------------------------------
+d  folded dir
+D  expanded dir
+g  not expanded glob pattern
+G  expanded glob pattern
+
+f  file
+c  commented file
+x  non existing file (dog will not remove removed file from list unless you
+   told it to do so)
+
+when in char mode, (no gui)
+----------------------------
+d  <+>
+D  <->
+g  <?>
+G  <@>
+f  ""

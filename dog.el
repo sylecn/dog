@@ -91,12 +91,16 @@
   :group 'dog)
 
 ;;===========================
-;; across sessions
+;; cross sessions
 ;;===========================
 
 ;; what's under ~/.emacs.d/dog/
-;; config.el
-;; (dog-version)
+;; config.el example:
+;; (defconst dog-config-version "1.0dev" "config written using which dog version")
+;;
+;; TODO listname and filename are the same when creating new lists. they
+;; can differ when user rename list. and not yet sync list with file.
+;; to sync them, just rm the old file and create a new one.
 ;;
 ;; foo.el bar.el ...
 ;; see document in dog-list.el before dog-default-list.
@@ -107,6 +111,7 @@
 (defun dog-read-config ()
   "read config from `dog-config-dir'"
   (interactive)
+  ;; TODO catch error here.
   )
 
 (defun dog-write-config ()
@@ -122,9 +127,20 @@
   "contains all opened list buffers")
 ;;TODO when dog list buffer is killed, update this variable.
 
+(defvar dog-pre-buffer-newlines 4)
+(defvar dog-pre-line-spaces 4)
+(defvar dog-dir-indent 4)
+(defvar dog-file-indent 4)
+
 ;;==============
 ;; common utils
 ;;==============
+
+(defmacro set-local (var &optional default)
+  "make var a buffer local variable and set it's value to default. var should be a symbol no quote.
+
+this macro is shorthand for (set (make-local-variable 'var) default)."
+  `(set (make-local-variable (quote ,var)) ,default))
 
 (defun dog-buffer-name (l)
   "return the buffer name for given list name (string)"
@@ -135,7 +151,10 @@
   (interactive)
   (substring b 5))
 
-(window-width)
+(defun dog-list-file (l)
+  "return the config file name for given list name (string)"
+  (interactive)
+  (concat dog-config-dir l ".el"))
 
 ;; (require 'dog-list)
 ;; (require 'dog-lists)
