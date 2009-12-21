@@ -1,0 +1,19 @@
+
+
+
+
+    default [playing]                                              [loop]
+    
+    <+> ~/musics/foo
+        <f> foo1.mp3
+        <f> foo2.mp3
+	
+    <+> /fat32/down/musics/bar/*.mp3
+        <f> bar1.mp3
+>       <f> bar2.mp3
+        <f> bar3.mp3
+
+
+
+commented file (temporary disabled file) use a different face.
+pattern dir use a different face on the dir line

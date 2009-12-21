@@ -1,0 +1,24 @@
+
+
+
+
+    <+> default [playing]                                              [loop]
+
+        <+> ~/musics/foo
+            [music icon] foo1.mp3
+            [music icon] foo2.mp3
+
+        <+> /fat32/down/musics/bar
+            [music icon] bar1.mp3
+>           [music icon] bar2.mp3
+            [music icon] bar3.mp3
+
+
+    <+> mylist1                                               [loop] [random]
+
+        <+> ~/musics/foobar
+            [music icon] foobar1.mp3
+            [music icon] foobar2.mp3
+
+        <+> /fat32/down/musics/foo
+            [music icon] foo.mp3

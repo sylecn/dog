@@ -1,7 +1,7 @@
 smp.el -- simple music player
 
 * write a music player for emacs 				 :emacs:easy:
-  EMMS is just not nice.
+  I really don't like the EMMS interface.
 ** the list buffer looks like this
    icons for dir looks like that in speedbar. (clickable and foldable)
    <+> ~/musics/foo
@@ -49,7 +49,7 @@ smp.el -- simple music player
     D    delete list from disk (ask for confirmation)
     p    play this list
     RET  play this list
-    e    edit the list file (plain editing)
+    e    edit current list in a new text buffer (plain editing)
          the user can do insert, ordering, query-replace, anything.
     o    open list (expand list)
          if list is already expanded (including active list of course), toggle
@@ -80,10 +80,16 @@ smp.el -- simple music player
         r is already used, so o for randOm.
    T    toggle show Tags, show filename or mp3 tags (remember the choice for every list)
    g    refresh list (update dir 'file' and pattern 'file')
+   e    edit file name in mini-buffer, can be used to replace current file with
+        another one
 
    9    volume -
    0    volume +
    and other useful mplayer commands
+
+   C-x C-s    save list to disk.
+       	      dog also save list when quit list or emacs exit.
+   C-x C-f    open list
 
 ** command bindings
    comment-line        comment file (file still in list, but will not be played)
@@ -124,13 +130,36 @@ smp.el -- simple music player
 *** when add file to list
     auto insert the new file at the end of the existing dir (if any)
     or create a new dir item and put it there
-*** playlist file format
+*** playlist object
+**** different type of dir entries have different options
+     for static dir entry
+     you can order, add, remove file.
+
+     for glob pattern dir entry
+     you can remove file. you can not order or add file to that pattern dir.
+     you can convert it to a static dir entry.
+
+     when adding new file, if the dir already exists and is a static dir,
+     insert new file to that entry.
+     
+     when adding new glob pattern, ask the user does he want to add it as a
+     pattern entry. if so, first check whether the same glob entry exists, if
+     not create a new pattern dir entry. if the user just want to add the
+     files, then add files as if the user has not used any pattern.
+
+     when user try to add ~/musics/, add a * at the end automatically.
+     
+*** playlist file format: dynamic list
     patterns and dir are dynamic file in list, they will be expanded each time
     the list is read from disk. for example,
     
     adding ~/musics/*.mp3 to a list will scan all mp3 files in ~/musics each
     time it gets read from disk or refresh by the user.
-    
+
+    when editing the list,
+    if add a new file, store the file name.
+    if add a new pattern, store the pattern name.
+    if rm a file from list, store the removed file name.
 **** playlist must store
      loop, random info
      files in order
@@ -197,3 +226,6 @@ smp.el -- simple music player
 
 *** tags and caching
     if tags is being used, it should be cached.
+
+*** about undo
+    list buffer should disable undo. I guess.

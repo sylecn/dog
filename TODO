@@ -1,4 +1,86 @@
-* 
+* implementation considerations
+  :note: press C-c l to add new item.
+** 
+** there is no assoc file with buffer. how can i tell emacs that?
+** use ezimage to add GUI image icons
+   (require 'ezimage)
+   easy-customize, speedbar all use it to display image.
+
+   text <-> gui element
+   --------------------
+   <+> dir icon (use a nice 3D looking dir icon)
+   <f> music icon (use a 3D looking 音符 icon)
+
+*** do this when almost done.
+** how to display the text in another form
+   for example <+> displayed as an icon
+   lambda displayed as the lambda letter
+
+   see
+   g: Special Properties
+   g: Overlays Properties
+** use midentify to get tag information, so smp will only depend on mplayer
+** code reading on emms and EmacsAlsaPlayer
+   info doc of emms, done.
+   EAP has much better document. nearly the same as what I suppose to implement
+   in smp.
+
+** choose a music player backend
+   mplayer
+   AlsaPlayer
+   mpd - music player daemon
+   
+** I remember mplayer project said it's not a music player. it's a movie player.
+   see what music player they recommand and why.
+** how to support more than one sound card?
+   EAP has this feature
+** how to control mplayer in emacs
+   volume
+   previous/next
+
+   fifo, named pipe
+
+   3.3.3. Slave mode
+   The slave mode allows you to build simple frontends to MPlayer. When run with
+   the -slave option MPlayer will read commands separated by a newline (\n) from
+   stdin. The commands are documented in the slave.txt file.
+   
+
+** how to reuse existing mplayer process.
+   one instance is enough for all.
+   don't exit when done playing a song. only exit when emacs exit.
+
+   use my lisp playlist and send song to mplayer, instead of mplayer -playlist
+   option.
+** major mode in info doc
+   
+*** eldoc Lists mode print list name in echo area
+   
+*** (put 'funny-mode 'mode-class 'special)
+
+** keymap
+   `(t . BINDING)'
+   print (message "not a command: %?" key) for keys that are not binded.
+
+** Desktop Save Mode
+   ref: elisp info g: Desktop Save Mode
+
+   For buffers not visiting a file to have their state saved, the major
+   mode must bind the buffer local variable `desktop-save-buffer' to a
+   non-`nil' value.
+
+
+** find a good name for this library.
+   name it dog
+   M-x dog
+
+   easy to type. not cute, but simple to remember.
+** rename this lib before releasing.
+** about m3u format
+   The file is saved with the "M3U" or "m3u" filename extension, and - if
+   edited in a text editor - must be encoded in the ANSI (Windows-1252) format
+   in order to be understood by media players.
+   
 * implementation references
 ** mplayer slave mode
    http://www.mplayerhq.hu/DOCS/tech/slave.txt
@@ -38,66 +120,3 @@
      metadata
      volume
      mute
-
-* use midentify to get tag information, so smp will only depend on mplayer
-* code reading on emms and EmacsAlsaPlayer
-  info doc of emms, done.
-  EAP has much better document. nearly the same as what I suppose to implement
-  in smp.
-
-* choose a music player backend
-  mplayer
-  AlsaPlayer
-  mpd - music player daemon
-  
-* I remember mplayer project said it's not a music player. it's a movie player.
-  see what music player they recommand and why.
-* how to support more than one sound card?
-  EAP has this feature
-* how to control mplayer in emacs
-  volume
-  previous/next
-
-  fifo, named pipe
-
-  3.3.3. Slave mode
-  The slave mode allows you to build simple frontends to MPlayer. When run with
-  the -slave option MPlayer will read commands separated by a newline (\n) from
-  stdin. The commands are documented in the slave.txt file.
-  
-
-* how to reuse existing mplayer process.
-  one instance is enough for all.
-  don't exit when done playing a song. only exit when emacs exit.
-
-  use my lisp playlist and send song to mplayer, instead of mplayer -playlist
-  option.
-* major mode in info doc
-  
-** eldoc Lists mode print list name in echo area
-  
-** (put 'funny-mode 'mode-class 'special)
-
-* keymap
-  `(t . BINDING)'
-  print (message "not a command: %?" key) for keys that are not binded.
-
-* Desktop Save Mode
-  ref: elisp info g: Desktop Save Mode
-
-  For buffers not visiting a file to have their state saved, the major
-  mode must bind the buffer local variable `desktop-save-buffer' to a
-  non-`nil' value.
-
-
-* find a good name for this library.
-  name it dog
-  M-x dog
-
-  easy to type. not cute, but simple to remember.
-* rename this lib before releasing.
-* about m3u format
-  The file is saved with the "M3U" or "m3u" filename extension, and - if
-  edited in a text editor - must be encoded in the ANSI (Windows-1252) format
-  in order to be understood by media players.
-  
