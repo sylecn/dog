@@ -81,12 +81,19 @@ smp.el -- simple music player
    T    toggle show Tags, show filename or mp3 tags (remember the choice for every list)
    g    refresh list (update dir 'file' and pattern 'file')
 
+   9    volume -
+   0    volume +
+   and other useful mplayer commands
+
 ** command bindings
    comment-line        comment file (file still in list, but will not be played)
    comment-dwim        toggle comment for current file/current region
    
 ** speedbar bindings   
    a    add file to current list (current list is currently playing list)
+
+** dired binding
+   ; a  add marked file to current list
 
 ** global bindings
    C-c e n    next file
@@ -97,7 +104,13 @@ smp.el -- simple music player
    C-c e e    show list
    C-c e SPC  pause
 
+   C-c e 9    volume +
+   C-c e 0    volume -
+
 ** implementations
+   :PROPERTIES:
+   :visibility: children
+   :END:
 *** lists are not expanded when opening Lists buffer
     lists are stored at ~/.emacs.d/smp/lists/
     when Lists buffer is be to show, read all names there.
@@ -181,3 +194,6 @@ smp.el -- simple music player
     this)
     
     just make a random integer of certain range and play file at that line.
+
+*** tags and caching
+    if tags is being used, it should be cached.

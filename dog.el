@@ -1,4 +1,4 @@
-;;; smp.el --- simple music player
+;;; dog.el --- simple music player
 
 ;; Copyright (C) 2009  Yuanle Song
 
@@ -24,9 +24,9 @@
 
 ;;; Code:
 
-(defvar smp-root-dir (concat user-emacs-directory smp)
-  "dir to store smp play lists and config files.")
+(defcustom dog-root-dir (concat user-emacs-directory "dog/")
+  "dir to store dog play lists and config files.")
 
-(provide 'smp)
+(provide 'dog)
 
-;;; smp.el ends here
+;;; dog.el ends here
