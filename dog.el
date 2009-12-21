@@ -1,4 +1,4 @@
-;;; dog.el --- simple music player
+;;; dog.el --- dog music player
 
 ;; Copyright (C) 2009  Yuanle Song
 
@@ -24,144 +24,77 @@
 ;;
 ;; TODO
 ;; how to handle window resize? add hook?
-;; check all items on README and zTODO.
+;;
+;; write some statistics to config file:
+;; dog-total-playing-time
+;; dog-total-list-created
+;;
+;; check all items on README and zTODO before releasing
+;;
+
 
 ;;; Code:
 
-(defgroup dog nil
-  "dog is a simple music player based on mplayer."
-  :tag "dog"
-  :version 23.1
-  :group 'multimedia)
+;;debug only
+;; (add-to-list 'load-path ".")
+;; (progn (setq dog-buffer-list nil))
+;; (progn (load-file "dog-utils.el") (load-file "dog-common.el") (load-file "dog-list.el") (load-file "dog.el"))
 
-(defconst dog-version "1.0dev"
-  "version number of dog.")
+(eval-when-compile
+  (require 'dog-common)
+  (require 'dog-utils)
+  (require 'dog-list)
+  ;; (require 'dog-lists)
+)
+
+
+;;==================
+;; global functions
+;;==================
+
+(defun dog-global-next ()
+  "play next file in list. loop if possible. stop if there is none."
+  (interactive)
+  )
+(defun dog-global-previous ()
+  "play previous file in list. loop if possible. stop if there is none."
+  (interactive)
+  )
+(defun dog-global-repeat-track ()
+  "repeat playing current track forever. until you goto next file manually."
+  (interactive)
+  )
+(defun dog-global-toggle-loop ()
+  "toggle list loop"
+  ;; only valid when playing
+  (interactive)
+  )
+(defun dog-global-show-list ()
+  "show active list. i.e. switch to `dog-active-buffer'"
+  (interactive)
+  (if dog-active-buffer
+      (dog-find-list dog-active-buffer)
+    (dog-find-list dog-default-list-name)))
+(defun dog-global-pause ()
+  "pause or continue from pause"
+  (interactive)
+  )
+
+(global-set-key (kbd "C-c e n") 'dog-global-next)
+(global-set-key (kbd "C-c e p") 'dog-global-previous)
+(global-set-key (kbd "C-c e r") 'dog-global-repeat-track)
+(global-set-key (kbd "C-c e l") 'dog-global-toggle-loop)
+(global-set-key (kbd "C-c e e") 'dog-global-show-list)
+(global-set-key (kbd "C-c e SPC") 'dog-global-pause)
+
+;;==========
+;; dog init
+;;==========
 
 (defun dog-version ()
   "show dog version"
   (interactive)
   (message "dog %s" dog-version))
-
-;;========================
-;; customizable variables
-;;========================
-
-(defcustom dog-default-music-dir nil
-  "where to find music files"
-  :type 'string
-  :group 'dog)
-
-(defcustom dog-config-dir (concat user-emacs-directory "dog/")
-  "dir to store dog play lists and config files."
-  :type 'string
-  :group 'dog)
-
-(defcustom dog-default-list-name "default"
-  "name for default list"
-  :type 'string
-  :group 'dog)
-
-(defcustom dog-loop-on nil
-  "if non-nil loop will be on by default."
-  :type 'boolean
-  :group 'dog)
-
-(defcustom dog-random-on nil
-  "if non-nil random will be on by default."
-  :type 'boolean
-  :group 'dog)
-
-(defcustom dog-use-pattern-entry 'ask-no
-  "when adding a file containing *, should I create a pattern entry (which will automatically update) or just add the files matching the pattern. possible values are `ask-no' (default), `ask-yes', `yes', `no'. setting to nil means no."
-  :type 'symbol
-  :group 'dog)
-
-(defcustom dog-recursive-add-directory nil
-  "when adding a dir, whether or not to include sub dirs.")
-
-;; when adding ~/musics/*, should only add music files, ignore files with no ext
-(defcustom dog-music-file-pattern ""
-  "a regexp. when adding a dir, only add files matching this pattern. empty means add everything."
-  :type 'string
-  :group 'dog)
-
-(defcustom dog-music-file-pattern-exclude "\\.\\(?:rar\\|zip\\|tar"
-  "a regexp. when adding a dir, exclude files matching this pattern"
-  :type 'string
-  :group 'dog)
-
-;;===========================
-;; cross sessions
-;;===========================
-
-;; what's under ~/.emacs.d/dog/
-;; config.el example:
-;; (defconst dog-config-version "1.0dev" "config written using which dog version")
-;;
-;; TODO listname and filename are the same when creating new lists. they
-;; can differ when user rename list. and not yet sync list with file.
-;; to sync them, just rm the old file and create a new one.
-;;
-;; foo.el bar.el ...
-;; see document in dog-list.el before dog-default-list.
-
-(defvar dog-last-active-list nil
-  "the name (string) of last active list.")
-
-(defun dog-read-config ()
-  "read config from `dog-config-dir'"
-  (interactive)
-  ;; TODO catch error here.
-  )
-
-(defun dog-write-config ()
-  "write config to `dog-config-dir'"
-  (interactive)
-  )
-
-;;====================
-;; ordinary variables
-;;====================
-
-(defvar dog-buffer-list nil
-  "contains all opened list buffers")
-;;TODO when dog list buffer is killed, update this variable.
-
-(defvar dog-pre-buffer-newlines 4)
-(defvar dog-pre-line-spaces 4)
-(defvar dog-dir-indent 4)
-(defvar dog-file-indent 4)
-
-;;==============
-;; common utils
-;;==============
-
-(defmacro set-local (var &optional default)
-  "make var a buffer local variable and set it's value to default. var should be a symbol no quote.
-
-this macro is shorthand for (set (make-local-variable 'var) default)."
-  `(set (make-local-variable (quote ,var)) ,default))
-
-(defun dog-buffer-name (l)
-  "return the buffer name for given list name (string)"
-  (concat " dog-" l))
-
-(defun dog-list-name (b)
-  "return the list name of given buffer name (string)"
-  (interactive)
-  (substring b 5))
-
-(defun dog-list-file (l)
-  "return the config file name for given list name (string)"
-  (interactive)
-  (concat dog-config-dir l ".el"))
-
-;; (require 'dog-list)
-;; (require 'dog-lists)
-
-;;=====
-;; dog
-;;=====
 
 (defun dog-find-list (l)
   "if l is already opened, show that buffer. else open list l (string)."
@@ -169,17 +102,21 @@ this macro is shorthand for (set (make-local-variable 'var) default)."
   (let ((bufname (dog-buffer-name l)))
     (if (member bufname dog-buffer-list)
 	(switch-to-buffer bufname)
-      (get-buffer-create bufname)
-      (dog-list-mode))))
+      (let ((buf (get-buffer-create bufname)))
+	(switch-to-buffer buf)
+	(dog-list-mode)))))
 
 ;; major interface
 (defun dog ()
-  "start dog. read configs in `dog-config-dir'. open list in `dog-last-active-list' or `dog-default-list'."
+  "start dog.
+
+read configs in `dog-config-dir'. open list in `dog-last-active-list' or `dog-default-list-name'."
   (interactive)
   (dog-read-config)
+  ;; switch to last-active-list. this is different from active-buffer
   (if dog-last-active-list
       (dog-find-list dog-last-active-list)
-    (dog-find-list dog-default-list)))
+    (dog-find-list dog-default-list-name)))
 
 (provide 'dog)
 

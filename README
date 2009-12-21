@@ -57,17 +57,18 @@ smp.el -- simple music player
     RET  open list. (no random stuff here)
 
 ** list buffer bindings
+   q    hide list
+   Q    kill list
+   
    a    add file or dir
         parameter can be:
 	~/musics/*.mp3
-	~/musics/foo/    add music all files under this dir
+	~/musics/foo/  add music all files under this dir
+	~/musics/foo/bar.mp3
    d    delete file from list
    D    delete file from disk, ask do you want to delete all ref in play lists
    r    rename file from list (so, each file can have a show name.)
    R    rename/mv file (disk)
-   RET  play this file
-   SPC  pause, thus mute
-   q    hide list
    m    mark
    u    unmark
    n    make new list from marked file
@@ -83,6 +84,8 @@ smp.el -- simple music player
    e    edit file name in mini-buffer, can be used to replace current file with
         another one
 
+   RET  play this file
+   SPC  pause, thus mute
    9    volume -
    0    volume +
    and other useful mplayer commands
@@ -101,7 +104,7 @@ smp.el -- simple music player
 ** dired binding
    ; a  add marked file to current list
 
-** global bindings
+** DONE global bindings
    C-c e n    next file
    C-c e p    previous file
    C-c e r    repeat this file (play this file again and again, don't go next)
@@ -109,9 +112,6 @@ smp.el -- simple music player
    C-c e l    toggle loop (only valid when playing)
    C-c e e    show list
    C-c e SPC  pause
-
-   C-c e 9    volume +
-   C-c e 0    volume -
 
 ** implementations
    :PROPERTIES:

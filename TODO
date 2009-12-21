@@ -5,6 +5,7 @@
    500+ file
 
    use /usr/lib/*.so to test read/write list.
+*** also see what hashmap is used for.
 ** there is no assoc file with buffer. how can i tell emacs that?
 ** use ezimage to add GUI image icons
    (require 'ezimage)
@@ -13,7 +14,8 @@
    text <-> gui element
    --------------------
    <+> dir icon (use a nice 3D looking dir icon)
-   <f> music icon (use a 3D looking 音符 icon)
+   f   music icon (use a 3D looking 音符 icon)
+   list: use a play list icon.
 
 *** do this when almost done.
 ** how to display the text in another form
@@ -124,3 +126,18 @@
      metadata
      volume
      mute
+
+** when op buffer text, sync the following variable
+   dog-list-glob-remove-alist
+   ;; when remove a file on a glob pattern entry
+   ;; insert (pattern . rm-filename)
+
+   dog-file-display-name-alist
+   ;; when user add a display name for any file
+   ;; insert (full-filename . display-name)
+
+   dog-list-last-played-file
+   ;; when start playing a new file, update this var to
+   ;; full-filename
+
+   

@@ -2,7 +2,7 @@
 
 
 
-    default [playing]                                              [loop]
+    list: default [playing]                                           [loop]
     
     D ~/musics/foo
         f foo1.mp3
