@@ -76,6 +76,11 @@
 (defvar dog-file-indent 4)
 (defvar dog-right-margin 4)
 
+;; patterns
+(defvar dog-pattern-dir-or-pattern "\\([DdGg]\\) \\(.*\\)")
+(defvar dog-pattern-file "^>? *\\([fc]\\) \\(.*\\)"
+  "used in `looking-at'. don't remove ^..")
+
 ;;======================================
 ;; configs that preserve cross sessions
 ;;======================================

@@ -242,15 +242,34 @@ this function may update `dog-last-active-list'."
 ;; list control helper functions
 ;;===============================
 
+(defun dog-list-dir-or-pattern-at-point ()
+  "return the dir or pattern that contains point. return nil if none."
+  (interactive)
+  (save-excursion
+    (end-of-line)
+    (if (search-backward-regexp dog-pattern-dir-or-pattern nil t)
+	(match-string 2))))
+
+(defun dog-insert-file-after-line (file)
+  "insert file after current line"
+  (edit-readonly-maybe
+   (forward-line)
+   (dog-list-insert-indent-for-file)
+   (insert file "\n")))
+  
 (defun dog-list-add-file-plain (file)
   "add given file to `dog-list-entries'"
   (interactive)
   (let ((f (expand-file-name file)))
     (let ((dir (file-name-directory f))
 	  (file (file-name-nondirectory f)))
-      (if (dog-merge-static-file dir file)
-	  
-  )
+      (if (equal (dog-list-dir-or-pattern-at-point) dir)
+	  ;; same dir as dir at point
+	  (dog-insert-file-after-line file)
+	(goto-char (point-max))
+	(if (search-forward dir nil t)
+	    (dog-insert-file-after-line file)
+	  (dog-insert-file-after-line file))))))
 
 (defun dog-list-add-file-glob-pattern (pattern)
   "add given pattern to `dog-list-entries'"
@@ -320,16 +339,15 @@ if a file on disk exists for current list, rename that file as well."
   (interactive)
   (save-excursion
     (goto-char (point-min))
-    (while (search-forward-regexp "\\([DdGg]\\) \\(.*\\)" nil t)
+    (while (search-forward-regexp dog-pattern-dir-or-pattern nil t)
       (let ((type-char (match-string 1))
 	    (dir-or-pattern (match-string 2))
-	    (file-pattern "^>? *\\([fc]\\) \\(.*\\)")
 	    files
 	    commented)
 	(case type-c
 	  (("D" "d")
 	   (forward-line)
-	   (while (looking-at file-pattern)
+	   (while (looking-at dog-pattern-file)
 	     (let ((file-mark (match-string 1))
 		   (file-name (match-string 2)))
 	       (setq files (cons file-name files))
@@ -347,7 +365,7 @@ if a file on disk exists for current list, rename that file as well."
 	  ("G"
 	   ;; connect 'c' lines to commented var
 	   (forward-line)
-	   (while (looking-at file-pattern)
+	   (while (looking-at dog-pattern-file)
 	     (let ((file-mark (match-string 1))
 		   (file-name (match-string 2)))
 	       (if (equal file-mark "c")
@@ -456,9 +474,14 @@ Turning on dog-list mode runs the normal hook `dog-list-mode-hook'."
   (set-local dog-list-last-played-file (nth 5 dog-list))
   (set-local dog-list-entries (nth 6 dog-list))
 
+  ;;===================
+  ;; insert init texts
+  ;;===================
+
+  (dog-list-insert-texts)
+  
   ;; add text to buffer, with text properties.
   ;; TODO if last-played-file is found, use > to mark that file.
-  (dog-list-insert-texts)
 
   ;; free up `dog-list-entries'. now all ops will be based on text.
   (setq dog-list-entries nil)
