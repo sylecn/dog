@@ -1,0 +1,2 @@
+TAGS:
+	etags *.el

@@ -37,7 +37,7 @@
 
 ;;debug only
 ;; (add-to-list 'load-path ".")
-;; (progn (setq dog-buffer-list nil))
+;; (progn (setq dog-buffer-list nil dog-list-last-used-dir nil dog-file-display-name-alist nil dog-list-glob-remove-alist nil))
 ;; (progn (load-file "dog-utils.el") (load-file "dog-common.el") (load-file "dog-list.el") (load-file "dog.el"))
 
 (eval-when-compile

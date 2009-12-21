@@ -25,7 +25,7 @@
 ;;; Code:
 
 ;; a dog list is a list of form
-;; (dog-version listname loop-p random-p last-played-file ENTRIES)
+;; (dog-version listname loop-p random-p last-played-file ENTRIES last-used-dir)
 ;;
 ;; listname is the list name (string)
 ;; loop-p and random-p can be one of the following
@@ -34,14 +34,11 @@
 ;; 'yes   turn on the feature
 ;; 'no    turn off the feature
 ;;
-;; last-played-file is a pair
-;; (count . filename)
-;; count is a number means the nth entry in ENTRIES
-;; filename is the last played filename
+;; last-played-file is a full filename (string)
 ;;
 ;; ENTRIES is a list, each element in the list can be one of the following
 ;;
-;; (('static . dir) FILENAMES COMMENTED)
+;; (('sattic . dir) FILENAMES COMMENTED)
 ;; (('glob . pattern) EXCLUDE-FILENAMES COMMENTED)
 ;;
 ;; for the 'static type:
@@ -83,7 +80,35 @@
   t)
 
 ;;=======================
+;; makr last played file
+;;=======================
+
+(defun dog-list-mark-last-played-file-maybe ()
+  "mark last played file with > and jump there if one is found. `dog-list-last-played-file'"
+  (interactive)
+  (if (and dog-list-last-played-file
+	   (not (equal "" dog-list-last-played-file)))
+    (let ((dir (file-name-directory dog-list-last-played-file))
+	  (file (file-name-nondirectory dog-list-last-played-file))
+	  (p (point)))
+      (goto-char (point-min))
+      (while (search-forward file nil t)
+	(let ((len (length dir))
+	      (dir-maybe (dog-list-dir-or-pattern-at-point)))
+	  (when (and dir-maybe
+		     (equal (substring dir-maybe 0 len) dir))
+	    ;; found the file.
+	    (forward-search dir nil t)
+	    (forward-search file nil t)
+	    (beginning-of-line)
+	    (edit-readonly-maybe
+	     (delete-char 1)
+	     (insert-char ?\< 1))))))))
+
+;;=======================
 ;; dog-list-insert-texts
+;; 
+;; insert initial texts
 ;;=======================
 
 (defun dog-list-insert-header-line ()
@@ -121,26 +146,33 @@ uses `dog-list-name' `dog-list-loop-on' `dog-list-random-on' and global `dog-loo
 	      "\n\n"))))
 
 (defsubst dog-list-insert-indent-for-entry ()
-  (insert (make-string (+ dog-pre-line-spaces
-			  dog-dir-indent)
-		       ?\ )))
+  (insert-char ?\  (+ dog-pre-line-spaces
+		      dog-dir-indent)))
 
 (defsubst dog-list-insert-indent-for-file ()
-  (insert (make-string (+ dog-pre-line-spaces
+  (insert-char ?\  (+ dog-pre-line-spaces
 			      dog-dir-indent
-			      dog-file-indent)
-			   ?\ )))
+			      dog-file-indent)))
 
-;;TODO how to catch errors in elisp? exceptions?
-(defun dog-list-insert-static-entry (dir-files)
+(defsubst dog-list-insert-commented-file (file)
+  (dog-list-insert-indent-for-file)
+  (insert "c" file "\n"))
+
+(defsubst dog-list-insert-file (file)
+  (dog-list-insert-indent-for-file)
+  (insert "f" file "\n"))
+
+(defun dog-list-insert-static-entry (dir rest)
   "insert given content of a static entry."
   (interactive)
-  (let ((dir (car dir-files)))
-    (dog-list-insert-indent-for-entry)
-    (insert dir "\n")
-    (dolist (file (cdr dir-files))
-      (dog-list-insert-indent-for-file)
-      (insert file "\n"))))
+  (dog-list-insert-indent-for-entry)
+  (insert dir "\n")
+  (let ((files (car rest))
+	(commented (cadr rest)))
+    (dolist (file files)
+      (if (member file commented)
+	  (dog-list-insert-commented-file file)
+	(dog-list-insert-file file)))))
 
 (defun dog-list-glob-to-regexp (glob)
   "glob only support ? and *. which matches . and .* in regexp.
@@ -150,8 +182,7 @@ not quoted for now: [ ] ^ $ \
 replace ? with .
 replace * with .*
 
-TODO use a existing function for this purpose.
-see `wildcard-to-regexp'
+todo use a existing function for this purpose. see `wildcard-to-regexp'
 "
   (interactive)
   ;; replace order matters
@@ -199,27 +230,26 @@ see `wildcard-to-regexp'
 
 remember to mark `dog-list-last-played-file' if it's in this entry."
   (interactive)
-  (case (car entry)
-    ('static (dog-list-insert-static-entry (cdr entry)))
-    ('glob   (dog-list-insert-glob-entry (cdr entry)))
+  (case (caar entry)
+    ('static (dog-list-insert-static-entry (cdar entry) (cdr entry)))
+    ('glob   (dog-list-insert-glob-entry (cdar entry) (cdr entry)))
     ('regexp nil)
     (t       nil)))
 
 (defun dog-list-insert-texts ()
   "insert initial texts to buffer."
-  (interactive)
   ;; empty lines
-  (insert (make-string dog-pre-buffer-newlines ?\n))
+  (insert-char ?\n dog-pre-buffer-newlines)
 
   ;; header line
-  (insert (make-string dog-pre-line-spaces ?\ ))
+  (insert-char ?\  dog-pre-line-spaces)
   (dog-list-insert-header-line)
 
   ;; entries
   (if dog-list-entries
       (dolist (entry dog-list-entries)
 	(dog-list-insert-entry entry))
-    (message "list is empty. press a to add file to list.")))
+    (message "empty list. [a to add]")))
 
 ;;================
 ;; player control
@@ -256,20 +286,24 @@ this function may update `dog-last-active-list'."
    (forward-line)
    (dog-list-insert-indent-for-file)
    (insert file "\n")))
-  
+
 (defun dog-list-add-file-plain (file)
   "add given file to `dog-list-entries'"
   (interactive)
   (let ((f (expand-file-name file)))
     (let ((dir (file-name-directory f))
 	  (file (file-name-nondirectory f)))
+      (setq dog-list-last-used-dir dir)
       (if (equal (dog-list-dir-or-pattern-at-point) dir)
 	  ;; same dir as dir at point
 	  (dog-insert-file-after-line file)
 	(goto-char (point-max))
 	(if (search-forward dir nil t)
 	    (dog-insert-file-after-line file)
-	  (dog-insert-file-after-line file))))))
+	  ;; insert a new dir heading then insert the file
+	  (edit-readonly-maybe
+	   (insert "\n")
+	   (dog-list-insert-static-entry dir (cons (cons file nil) nil))))))))
 
 (defun dog-list-add-file-glob-pattern (pattern)
   "add given pattern to `dog-list-entries'"
@@ -282,8 +316,7 @@ this function may update `dog-last-active-list'."
 
 (defun dog-list-add-file (file)
   "add file to list. file can be a complete file name (string) or a glob pattern (string)."
-  (interactive "GAdd file: ")
-  
+  (interactive (list (read-file-name "Add file: " dog-list-last-used-dir)))
   (if (file-exists-p file)
       ;; complete file name
       (dog-list-add-file-plain file)
@@ -386,13 +419,15 @@ if a file on disk exists for current list, rename that file as well."
 	(listfile dog-list-file)
 	(bufname (buffer-name))
 	(buf (generate-new-buffer dog-list-name))
-	(str (format "(setq dog-list\n  (list \"%s\" \"%s\" %s %s '%s '%s))\n\n"
-		     dog-version
-		     dog-list-name
-		     dog-list-loop-on
-		     dog-list-random-on
-		     dog-list-last-played-file
-		     dog-list-entries
+	(str (format "(setq dog-list (list \n  \"%s\" \"%s\" %s %s \"%s\" (quote %s) \"%s\"))\n\n"
+		     
+		     dog-version		       ;string
+		     dog-list-name		       ;string
+		     dog-list-loop-on		       ;symbol
+		     dog-list-random-on		       ;symbol
+		     (or dog-list-last-played-file "") ;string
+		     dog-list-entries		       ;list
+		     (or dog-list-last-used-dir "")    ;string
 		     )))
     (princ str buf)
     ;; write buffer content to file
@@ -460,7 +495,7 @@ Turning on dog-list mode runs the normal hook `dog-list-mode-hook'."
 	(error "Error reading list file %s" dog-list-file))
     ;; create an empty list
     (setq dog-list
-	  (list dog-version dog-list-name nil nil nil nil)))
+	  (list dog-version dog-list-name nil nil nil nil nil)))
   
   ;; after loading this file, `dog-list' is a valid dog list object
   (add-to-list 'dog-buffer-list (buffer-name))
@@ -469,19 +504,19 @@ Turning on dog-list mode runs the normal hook `dog-list-mode-hook'."
   (dog-list-validate-dog-list)
 
   ;; the 1st is dog-list-name, which is already set.
-  (set-local dog-list-loop-on (nth 3 dog-list))
-  (set-local dog-list-random-on (nth 4 dog-list))
-  (set-local dog-list-last-played-file (nth 5 dog-list))
-  (set-local dog-list-entries (nth 6 dog-list))
+  (set-local dog-list-loop-on (nth 2 dog-list))
+  (set-local dog-list-random-on (nth 3 dog-list))
+  (set-local dog-list-last-played-file (nth 4 dog-list))
+  (set-local dog-list-entries (nth 5 dog-list))
+  (set-local dog-list-last-used-dir (nth 6 dog-list))
 
   ;;===================
   ;; insert init texts
   ;;===================
 
   (dog-list-insert-texts)
-  
+  (dog-list-mark-last-played-file-maybe)
   ;; add text to buffer, with text properties.
-  ;; TODO if last-played-file is found, use > to mark that file.
 
   ;; free up `dog-list-entries'. now all ops will be based on text.
   (setq dog-list-entries nil)

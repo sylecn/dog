@@ -140,4 +140,5 @@
    ;; when start playing a new file, update this var to
    ;; full-filename
 
-   
+   dog-list-last-used-dir
+   ;; when user add new file, update this var to the dir.
