@@ -80,6 +80,7 @@
 (defvar dog-pattern-dir-or-pattern "\\([DdGg]\\) \\(.*\\)")
 (defvar dog-pattern-file "^>? *\\([fc]\\) \\(.*\\)"
   "used in `looking-at'. don't remove ^..")
+(defvar dog-pattern-dir "\\([DdGg]\\) \\(.*/\\)")
 
 ;;======================================
 ;; configs that preserve cross sessions

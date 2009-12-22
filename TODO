@@ -1,6 +1,9 @@
 * implementation considerations
   :note: press C-c l to add new item.
 ** 
+** final check:
+   remove unnecessary (interactive) definition.
+   don't let M-x grow too much.
 ** test how list works on large dir
    500+ file
 
@@ -142,3 +145,9 @@
 
    dog-list-last-used-dir
    ;; when user add new file, update this var to the dir.
+
+   (set-buffer-modified-p nil)
+   (set-buffer-modified-p t)
+   ;; when list change. (new file, clear unexisting, comment line,
+   ;; save-list ...)
+   ;; set buffer modified flag.

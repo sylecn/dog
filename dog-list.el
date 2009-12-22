@@ -65,10 +65,10 @@
   "the huge list")
 (defvar dog-list-name nil)
 (defvar dog-list-file nil)
-(defvar dog-list-loop-on)
-(defvar dog-list-random-on)
-(defvar dog-list-last-played-file)
-(defvar dog-list-entries)
+(defvar dog-list-loop-on nil)
+(defvar dog-list-random-on nil)
+(defvar dog-list-last-played-file nil)
+(defvar dog-list-entries nil)
 
 ;;============================
 ;; dog-list-validate-dog-list
@@ -77,7 +77,24 @@
 (defun dog-list-validate-dog-list ()
   "validate `dog-list' signal error if it's very wrong. used both for debug purpose and real validate. return t if ok; return nil if bad."
   (interactive)
-  t)
+  (unless (symbolp dog-list-loop-on)
+    (message "dog-list-loop-on not a symbol: %s"
+	     dog-list-loop-on))
+  (unless (symbolp dog-list-random-on)
+    (message "dog-list-random-on not a symbol: %s"
+	     dog-list-random-on))
+  (unless (or (null dog-list-last-played-file)
+	      (stringp dog-list-last-played-file))
+    (message "dog-list-last-played-file not nil or string: %s"
+	     dog-list-last-played-file))
+  (unless (listp dog-list-entries)
+    (message "dog-list-entries not a list: %s"
+	     dog-list-entries))
+  (unless (or (null dog-list-last-used-dir)
+	      (stringp dog-list-last-used-dir))
+    (message "dog-list-last-used-dir not nil or string: %s"
+	     dog-list-last-used-dir))
+  (message "validate check done."))
 
 ;;=======================
 ;; makr last played file
@@ -93,10 +110,8 @@
 	  (p (point)))
       (goto-char (point-min))
       (while (search-forward file nil t)
-	(let ((len (length dir))
-	      (dir-maybe (dog-list-dir-or-pattern-at-point)))
-	  (when (and dir-maybe
-		     (equal (substring dir-maybe 0 len) dir))
+	(let ((dir-maybe (dog-list-dir-at-point)))
+	  (when (equal dir-maybe dir)
 	    ;; found the file.
 	    (forward-search dir nil t)
 	    (forward-search file nil t)
@@ -156,17 +171,17 @@ uses `dog-list-name' `dog-list-loop-on' `dog-list-random-on' and global `dog-loo
 
 (defsubst dog-list-insert-commented-file (file)
   (dog-list-insert-indent-for-file)
-  (insert "c" file "\n"))
+  (insert "c " file "\n"))
 
 (defsubst dog-list-insert-file (file)
   (dog-list-insert-indent-for-file)
-  (insert "f" file "\n"))
+  (insert "f " file "\n"))
 
 (defun dog-list-insert-static-entry (dir rest)
   "insert given content of a static entry."
   (interactive)
   (dog-list-insert-indent-for-entry)
-  (insert dir "\n")
+  (insert "D " dir "\n")
   (let ((files (car rest))
 	(commented (cadr rest)))
     (dolist (file files)
@@ -234,10 +249,12 @@ remember to mark `dog-list-last-played-file' if it's in this entry."
     ('static (dog-list-insert-static-entry (cdar entry) (cdr entry)))
     ('glob   (dog-list-insert-glob-entry (cdar entry) (cdr entry)))
     ('regexp nil)
-    (t       nil)))
+    (t       nil))
+  (insert "\n"))
 
 (defun dog-list-insert-texts ()
   "insert initial texts to buffer."
+  (setq buffer-read-only nil)
   ;; empty lines
   (insert-char ?\n dog-pre-buffer-newlines)
 
@@ -247,8 +264,10 @@ remember to mark `dog-list-last-played-file' if it's in this entry."
 
   ;; entries
   (if dog-list-entries
-      (dolist (entry dog-list-entries)
-	(dog-list-insert-entry entry))
+      (progn
+	(dolist (entry dog-list-entries)
+	  (dog-list-insert-entry entry))
+	(backward-delete-char 1))
     (message "empty list. [a to add]")))
 
 ;;================
@@ -272,6 +291,14 @@ this function may update `dog-last-active-list'."
 ;; list control helper functions
 ;;===============================
 
+(defun dog-list-dir-at-point ()
+  "return the dir (either dir itself or dir part of a pattern) that contains point. return nil if none."
+  (interactive)
+  (save-excursion
+    (end-of-line)
+    (if (search-backward-regexp dog-pattern-dir nil t)
+	(match-string 2))))
+
 (defun dog-list-dir-or-pattern-at-point ()
   "return the dir or pattern that contains point. return nil if none."
   (interactive)
@@ -285,7 +312,7 @@ this function may update `dog-last-active-list'."
   (edit-readonly-maybe
    (forward-line)
    (dog-list-insert-indent-for-file)
-   (insert file "\n")))
+   (insert "f " file "\n")))
 
 (defun dog-list-add-file-plain (file)
   "add given file to `dog-list-entries'"
@@ -370,6 +397,8 @@ if a file on disk exists for current list, rename that file as well."
 (defun dog-list-generate-entries ()
   "generate `dog-list-entries' from the text in the buffer. and from the synced variable `dog-list-glob-remove-alist'."
   (interactive)
+  ;; clear it before we scan the whole buffer
+  (setq dog-list-entries nil)
   (save-excursion
     (goto-char (point-min))
     (while (search-forward-regexp dog-pattern-dir-or-pattern nil t)
@@ -377,59 +406,72 @@ if a file on disk exists for current list, rename that file as well."
 	    (dir-or-pattern (match-string 2))
 	    files
 	    commented)
-	(case type-c
-	  (("D" "d")
-	   (forward-line)
-	   (while (looking-at dog-pattern-file)
-	     (let ((file-mark (match-string 1))
-		   (file-name (match-string 2)))
-	       (setq files (cons file-name files))
-	       (if (equal file-mark "c")
-		   (setq commented (cons file-name commented))))
-	     (forward-line))
-	   ;; now we have dir-or-pattern, files, commented
-	   (setq dog-list-entries
-		 (cons (list (cons 'static dir-or-pattern) files commented)
-		       dog-list-entries)))
-	  ("g" ;; now we have 'glob, dir-or-pattern
-	   (setq dog-list-entries
-		 (cons (list (cons 'glob dir-or-pattern) nil nil)
-		       dog-list-entries)))
-	  ("G"
-	   ;; connect 'c' lines to commented var
-	   (forward-line)
-	   (while (looking-at dog-pattern-file)
-	     (let ((file-mark (match-string 1))
-		   (file-name (match-string 2)))
-	       (if (equal file-mark "c")
-		   (setq commented (cons file-name commented))))
-	     (forward-line))
-	   ;; make use of `dog-list-glob-remove-alist'
-	   (setq dog-list-entries
-		 (cons (list (cons 'glob dir-or-pattern)
-			     (assoc dir-or-pattern dog-list-glob-remove-alist)
-			     commented)
-		       dog-list-entries))))))))
+	(cond
+	 ((or (equal type-char "D")
+	      (equal type-char "d"))
+	  (forward-line)
+	  (while (looking-at dog-pattern-file)
+	    (let ((file-mark (match-string 1))
+		  (file-name (match-string 2)))
+	      (setq files (cons file-name files))
+	      (if (equal file-mark "c")
+		  (setq commented (cons file-name commented))))
+	    (forward-line))
+	  ;; now we have dir-or-pattern, files, commented
+	  (setq dog-list-entries
+		(cons (list (cons 'static dir-or-pattern) files commented)
+		      dog-list-entries)))
+	 ((equal type-char "g")
+	  ;; now we have 'glob, dir-or-pattern
+	  (setq dog-list-entries
+		(cons (list (cons 'glob dir-or-pattern) nil nil)
+		      dog-list-entries)))
+	 ((equal type-char "G")
+	  ;; connect 'c' lines to commented var
+	  (forward-line)
+	  (while (looking-at dog-pattern-file)
+	    (let ((file-mark (match-string 1))
+		  (file-name (match-string 2)))
+	      (if (equal file-mark "c")
+		  (setq commented (cons file-name commented))))
+	    (forward-line))
+	  ;; make use of `dog-list-glob-remove-alist'
+	  (setq dog-list-entries
+		(cons (list (cons 'glob dir-or-pattern)
+			    (assoc dir-or-pattern dog-list-glob-remove-alist)
+			    commented)
+		      dog-list-entries)))))))
+  (message "%s" dog-list-entries))
 
-(defun dog-list-kill-buffer ()
-  "write list to file then `kill-buffer'"
+(defun dog-list-save-list ()
+  "save list to file. if this is the only dog list, also save dog config file."
   (interactive)
   (dog-list-generate-entries)
-  (let ((listbuf (current-buffer))
-	(listfile dog-list-file)
+  (let ((listfile dog-list-file)
 	(bufname (buffer-name))
-	(buf (generate-new-buffer dog-list-name))
-	(str (format "(setq dog-list (list \n  \"%s\" \"%s\" %s %s \"%s\" (quote %s) \"%s\"))\n\n"
-		     
-		     dog-version		       ;string
-		     dog-list-name		       ;string
-		     dog-list-loop-on		       ;symbol
-		     dog-list-random-on		       ;symbol
-		     (or dog-list-last-played-file "") ;string
-		     dog-list-entries		       ;list
-		     (or dog-list-last-used-dir "")    ;string
-		     )))
-    (princ str buf)
+	(buf (generate-new-buffer dog-list-name)))
+    (princ "(setq dog-list (list\n  " buf)
+    ;;string
+    (prin1 dog-version buf)
+    (princ " " buf)
+    ;;string
+    (prin1 dog-list-name buf)
+    (princ " " buf)
+    ;;symbol TODO check whether symbol works
+    (prin1 dog-list-loop-on buf)
+    (princ " " buf)
+    ;;symbol
+    (prin1 dog-list-random-on buf)
+    (princ " " buf)
+    ;;string
+    (prin1 dog-list-last-played-file buf)
+    (princ " (quote " buf)
+    ;;list
+    (prin1 dog-list-entries buf)
+    (princ ") " buf)
+    ;;string
+    (prin1 dog-list-last-used-dir buf)
+    (princ "))\n\n" buf)
     ;; write buffer content to file
     (set-buffer buf)
     (write-file listfile)
@@ -440,7 +482,15 @@ if a file on disk exists for current list, rename that file as well."
     (remove-from-list 'dog-buffer-list bufname)
     (if (null dog-buffer-list)
 	;; this is the last dog list buffer, save global dog config.
-	(dog-write-config))
+	(dog-write-config)))
+  (set-buffer-modified-p nil))
+  
+(defun dog-list-kill-buffer ()
+  "write list to file then `kill-buffer'"
+  (interactive)
+  (let ((listbuf (current-buffer)))
+    (dog-list-save-list)
+	
     ;; kill dog list buffer
     (kill-buffer listbuf)))
 
@@ -468,7 +518,7 @@ if a file on disk exists for current list, rename that file as well."
 ;;===========================
 
 (define-derived-mode dog-list-mode
-  fundamental-mode "dog list"
+  fundamental-mode "dog-list"
   "Major mode to play and manage a single dog play list.
 \\{dog-list-mode-map}
 Turning on dog-list mode runs the normal hook `dog-list-mode-hook'."
@@ -482,7 +532,7 @@ Turning on dog-list mode runs the normal hook `dog-list-mode-hook'."
   (when (local-variable-p dog-list-name)
     (dog-list-refresh)
     ;; is it ok using error to return
-    (error ""))
+    (error "Refresh instead of reloading dog-list-mode"))
 
   ;; now all we have is buffer name. we will build everything from here.
   (set-local dog-list-name (dog-list-name (buffer-name)))
@@ -490,7 +540,8 @@ Turning on dog-list mode runs the normal hook `dog-list-mode-hook'."
   
   (make-local-variable 'dog-list)
   (if (file-exists-p dog-list-file)
-      (unless (load-file dog-list-file)
+      (unless ;;(load dog-list-file nil t t)
+	  (load-file dog-list-file)
 	(kill-buffer)
 	(error "Error reading list file %s" dog-list-file))
     ;; create an empty list
@@ -500,15 +551,21 @@ Turning on dog-list mode runs the normal hook `dog-list-mode-hook'."
   ;; after loading this file, `dog-list' is a valid dog list object
   (add-to-list 'dog-buffer-list (buffer-name))
 
+  ;; the 1st is dog-list-name, which is already set.
+  (make-local-variable 'dog-list-loop-on)
+  (make-local-variable 'dog-list-random-on)
+  (make-local-variable 'dog-list-last-played-file)
+  (make-local-variable 'dog-list-entries)
+  (make-local-variable 'dog-list-last-used-dir)
+
+  (setq dog-list-loop-on (nth 2 dog-list))
+  (setq dog-list-random-on (nth 3 dog-list))
+  (setq dog-list-last-played-file (nth 4 dog-list))  
+  (setq dog-list-entries (nth 5 dog-list))
+  (setq dog-list-last-used-dir (nth 6 dog-list))
+
   ;; check whether the `dog-list' is well formed
   (dog-list-validate-dog-list)
-
-  ;; the 1st is dog-list-name, which is already set.
-  (set-local dog-list-loop-on (nth 2 dog-list))
-  (set-local dog-list-random-on (nth 3 dog-list))
-  (set-local dog-list-last-played-file (nth 4 dog-list))
-  (set-local dog-list-entries (nth 5 dog-list))
-  (set-local dog-list-last-used-dir (nth 6 dog-list))
 
   ;;===================
   ;; insert init texts
@@ -525,11 +582,17 @@ Turning on dog-list mode runs the normal hook `dog-list-mode-hook'."
   (set-local font-lock-defaults
 	     (list 'dog-list-lock-keywords t))
 
-  ;; add key bindings
+  ;; key bindings
   (define-key dog-list-mode-map (kbd "q")
     'quit-window)
   (define-key dog-list-mode-map (kbd "Q")
     'dog-list-kill-buffer)
+  (define-key dog-list-mode-map (kbd "C-x C-s")
+    'dog-list-save-list)
+  (define-key dog-list-mode-map [remap kill-buffer]
+    'dog-list-kill-buffer)
+  (define-key dog-list-mode-map [remap save-buffer]
+    'dog-list-save-list)
 
   (define-key dog-list-mode-map (kbd "a")
     'dog-list-add-file)
@@ -546,6 +609,7 @@ Turning on dog-list mode runs the normal hook `dog-list-mode-hook'."
     'dog-list-comment-line)
   
   ;; post processing
+  (set-buffer-modified-p nil)
   (set-local buffer-read-only t)
   (add-to-list 'dog-buffer-list (buffer-name))
   )
